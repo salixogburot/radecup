@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oppsal – Alle Jenter på Banen 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: #f4f4f2;
+    color: #1a1a1a;
+    min-height: 100vh;
+    padding: 0 0 3rem;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid #e0e0dc;
+    padding: 1.1rem 1rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: #888;
+    margin-top: -6px;
+    margin-bottom: 10px;
+    font-weight: 400;
+  }
+
+  .day-btns {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .dbtn {
+    flex: 1;
+    padding: 9px 4px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #555;
+    transition: all .15s;
+    text-align: center;
+  }
+
+  .dbtn.active {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+
+  .lag-btns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+  }
+
+  .lbtn {
+    padding: 8px 4px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #555;
+    transition: all .15s;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .lbtn.active-alle { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .lbtn.active-1   { background: #1a56a0; color: #fff; border-color: #1a56a0; }
+  .lbtn.active-2   { background: #1e7c4a; color: #fff; border-color: #1e7c4a; }
+  .lbtn.active-3   { background: #b85e0d; color: #fff; border-color: #b85e0d; }
+  .lbtn.active-4   { background: #9b2557; color: #fff; border-color: #9b2557; }
+  .lbtn.active-5   { background: #5a38c2; color: #fff; border-color: #5a38c2; }
+
+  main {
+    padding: 1rem 0.85rem 0;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .count {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 0.6rem;
+    padding: 0 2px;
+  }
+
+  .kamp {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e8e8e4;
+    padding: 13px 14px 11px;
+    margin-bottom: 8px;
+  }
+
+  .kamp-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+
+  .lag-badge {
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+  }
+
+  .b1 { background: #ddeaf8; color: #1a56a0; }
+  .b2 { background: #d5f0e2; color: #1e7c4a; }
+  .b3 { background: #fde8d4; color: #b85e0d; }
+  .b4 { background: #f8d9e8; color: #9b2557; }
+  .b5 { background: #ece5fa; color: #5a38c2; }
+
+  .kamp-tidblokk {
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+
+  .kamp-tid {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: #1a1a1a;
+  }
+
+  .kamp-dag {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 2px;
+    text-align: right;
+  }
+
+  .kamp-teams {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+
+  .kamp-arena {
+    font-size: 12px;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .kamp-arena svg {
+    flex-shrink: 0;
+    opacity: .6;
+  }
+
+  .nedtelling {
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 1px solid #f0f0ec;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #aaa;
+    min-height: 22px;
+  }
+
+  .nd-label { color: #bbb; }
+
+  .nd-tall {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .nd-snart {
+    font-size: 14px;
+    font-weight: 700;
+    color: #b85e0d;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px;
+  }
+
+  .nd-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .nd-startet  { background: #d5f0e2; color: #1e7c4a; }
+  .nd-avsluttet { background: #f0f0ec; color: #aaa; }
+
+  .empty {
+    text-align: center;
+    color: #bbb;
+    padding: 3rem 1rem;
+    font-size: 14px;
+  }
+
+  @media (min-width: 480px) {
+    .kamp-tid { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">Oppsal IF – AJPB Cup 2026</div>
+  <div class="header-sub">30.–31. mai 2026 · Råde</div>
+
+  <div class="day-btns">
+    <button class="dbtn active" onclick="setDay('alle')">Begge dager</button>
+    <button class="dbtn" onclick="setDay('lørdag')">Lør 30/05</button>
+    <button class="dbtn" onclick="setDay('søndag')">Søn 31/05</button>
+  </div>
+
+  <div class="lag-btns">
+    <button class="lbtn active-alle" onclick="setLag('alle')">Alle lag</button>
+    <button class="lbtn" onclick="setLag(1)">Oppsal 1</button>
+    <button class="lbtn" onclick="setLag(2)">Oppsal 2</button>
+    <button class="lbtn" onclick="setLag(3)">Oppsal 3</button>
+    <button class="lbtn" onclick="setLag(4)">Oppsal 4</button>
+    <button class="lbtn" onclick="setLag(5)">Oppsal 5</button>
+  </div>
+</header>
+
+<main>
+  <div class="count" id="count"></div>
+  <div id="liste"></div>
+</main>
+
+<script>
+const kamper = [
+  {lag:2,dag:'lørdag',hjem:'Skade, IL',borte:'Oppsal 2',tid:'09:00',arena:'Østfold energi arena 26'},
+  {lag:2,dag:'lørdag',hjem:'Oppsal 2',borte:'Rustad Abildsø SK 2',tid:'09:40',arena:'Park & Anlegg Arena 1'},
+  {lag:2,dag:'lørdag',hjem:'Oppsal 2',borte:'Mandalskameratene FK 1',tid:'11:00',arena:'Park & Anlegg Arena 6'},
+  {lag:2,dag:'lørdag',hjem:'Svelvik IF Sollaget',borte:'Oppsal 2',tid:'12:20',arena:'Park & Anlegg Arena 1'},
+  {lag:3,dag:'lørdag',hjem:'Oppsal 3',borte:'Gjelleråsen Grønn',tid:'13:00',arena:'Park & Anlegg Arena 8'},
+  {lag:5,dag:'lørdag',hjem:'Oppsal 5',borte:'Tønsberg FK',tid:'13:20',arena:'Park & Anlegg Arena 7'},
+  {lag:3,dag:'lørdag',hjem:'Oppsal 3',borte:'Lillehammer FK 2',tid:'13:40',arena:'Østfold energi arena 28'},
+  {lag:1,dag:'lørdag',hjem:'Våg FK 1',borte:'Oppsal 1',tid:'14:00',arena:'Park & Anlegg Arena 8'},
+  {lag:5,dag:'lørdag',hjem:'Skiens Grane IF 2',borte:'Oppsal 5',tid:'14:20',arena:'Østfold energi arena 28'},
+  {lag:3,dag:'lørdag',hjem:'Våg FK 3',borte:'Oppsal 3',tid:'14:20',arena:'Østfold energi arena 30'},
+  {lag:4,dag:'lørdag',hjem:'Oppsal 4',borte:'HSV Fotball Fanta',tid:'15:00',arena:'Østfold energi arena 30'},
+  {lag:1,dag:'lørdag',hjem:'Oppsal 1',borte:'Skogstrand IL',tid:'15:20',arena:'Park & Anlegg Arena 4'},
+  {lag:5,dag:'lørdag',hjem:'Oppsal 5',borte:'Solberg SK Minions',tid:'15:20',arena:'Østfold energi arena 29'},
+  {lag:3,dag:'lørdag',hjem:'Snøgg Fotball',borte:'Oppsal 3',tid:'15:40',arena:'Østfold energi arena 32'},
+  {lag:4,dag:'lørdag',hjem:'Flint Fotball HVIT',borte:'Oppsal 4',tid:'15:40',arena:'Park & Anlegg Arena 8'},
+  {lag:5,dag:'lørdag',hjem:'Oppsal 5',borte:'Lia IL 2',tid:'16:20',arena:'Østfold energi arena 26'},
+  {lag:1,dag:'lørdag',hjem:'Lillehammer FK 1',borte:'Oppsal 1',tid:'16:20',arena:'Park & Anlegg Arena 6'},
+  {lag:4,dag:'lørdag',hjem:'IFK Strömstad',borte:'Oppsal 4',tid:'16:40',arena:'Park & Anlegg Arena 9'},
+  {lag:1,dag:'lørdag',hjem:'Gjelleråsen Rød',borte:'Oppsal 1',tid:'17:00',arena:'Park & Anlegg Arena 8'},
+  {lag:4,dag:'lørdag',hjem:'Oppsal 4',borte:'Skiens Grane IF 3',tid:'17:20',arena:'Park & Anlegg Arena 5'},
+  {lag:5,dag:'søndag',hjem:'Oppsal 5',borte:'Skade, IL',tid:'09:20',arena:'Park & Anlegg Arena 5'},
+  {lag:5,dag:'søndag',hjem:'Oppsal 5',borte:'Askim Fotball Rød',tid:'10:00',arena:'Park & Anlegg Arena 1'},
+  {lag:5,dag:'søndag',hjem:'Råde IL 1',borte:'Oppsal 5',tid:'10:40',arena:'Østfold energi arena 32'},
+  {lag:5,dag:'søndag',hjem:'Kolbotn IL Grønn',borte:'Oppsal 5',tid:'11:40',arena:'Park & Anlegg Arena 8'},
+  {lag:3,dag:'søndag',hjem:'Rolvsøy IF rød',borte:'Oppsal 3',tid:'12:20',arena:'Østfold energi arena 29'},
+  {lag:2,dag:'søndag',hjem:'Oppsal 2',borte:'Sannidal IL',tid:'12:40',arena:'Østfold energi arena 26'},
+  {lag:3,dag:'søndag',hjem:'Skiens Grane IF 2',borte:'Oppsal 3',tid:'13:00',arena:'Park & Anlegg Arena 8'},
+  {lag:4,dag:'søndag',hjem:'Oppsal 4',borte:'Skiens Grane IF 1',tid:'13:00',arena:'Park & Anlegg Arena 4'},
+  {lag:2,dag:'søndag',hjem:'Trøgstad/Båstad FK',borte:'Oppsal 2',tid:'13:20',arena:'Park & Anlegg Arena 8'},
+  {lag:4,dag:'søndag',hjem:'Lervik IF',borte:'Oppsal 4',tid:'13:40',arena:'Park & Anlegg Arena 8'},
+  {lag:3,dag:'søndag',hjem:'Oppsal 3',borte:'Kolbotn IL Hvit',tid:'14:00',arena:'Østfold energi arena 31'},
+  {lag:2,dag:'søndag',hjem:'Oppsal 2',borte:'Kolbotn IL Blå',tid:'14:20',arena:'Østfold energi arena 26'},
+  {lag:4,dag:'søndag',hjem:'Råde IL 2',borte:'Oppsal 4',tid:'14:40',arena:'Park & Anlegg Arena 1'},
+  {lag:2,dag:'søndag',hjem:'Rolvsøy IF 1',borte:'Oppsal 2',tid:'15:00',arena:'Østfold energi arena 30'},
+  {lag:1,dag:'søndag',hjem:'Rapid Moss 2',borte:'Oppsal 1',tid:'15:00',arena:'Park & Anlegg Arena 4'},
+  {lag:4,dag:'søndag',hjem:'Oppsal 4',borte:'Gjelleråsen Rød',tid:'15:20',arena:'Østfold energi arena 28'},
+  {lag:3,dag:'søndag',hjem:'Oppsal 3',borte:'Rustad Abildsø SK 1',tid:'15:20',arena:'Østfold energi arena 31'},
+  {lag:1,dag:'søndag',hjem:'Oppsal 1',borte:'Jutul, IL',tid:'16:00',arena:'Park & Anlegg Arena 7'},
+  {lag:1,dag:'søndag',hjem:'Ås IL Fotball',borte:'Oppsal 1',tid:'16:40',arena:'Østfold energi arena 26'},
+  {lag:1,dag:'søndag',hjem:'Oppsal 1',borte:'Askim Fotball Hvit',tid:'17:40',arena:'Park & Anlegg Arena 6'},
+];
+
+const dagDato = { lørdag: '2026-05-30', søndag: '2026-05-31' };
+const badges  = { 1:'b1', 2:'b2', 3:'b3', 4:'b4', 5:'b5' };
+
+let aktivLag = 'alle', aktivDag = 'alle';
+let synlige = [];
+
+function kampStart(k) {
+  const [hh, mm] = k.tid.split(':').map(Number);
+  const d = new Date(dagDato[k.dag]);
+  d.setHours(hh, mm, 0, 0);
+  return d;
+}
+
+function nedtellingHTML(k) {
+  const now   = new Date();
+  const start = kampStart(k);
+  const slutt = new Date(start.getTime() + 30 * 60 * 1000);
+
+  if (now >= slutt) {
+    return `<span class="nd-pill nd-avsluttet">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Avsluttet
+    </span>`;
+  }
+
+  if (now >= start) {
+    return `<span class="nd-pill nd-startet">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Startet
+    </span>`;
+  }
+
+  const sek  = Math.floor((start - now) / 1000);
+  const min  = Math.floor(sek / 60);
+  const timer = Math.floor(min / 60);
+  const dager = Math.floor(timer / 24);
+
+  const pinSVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>`;
+
+  if (min < 60) {
+    const s = sek % 60;
+    const m = min % 60;
+    return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-snart">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+  }
+  if (timer < 24) {
+    const h = timer;
+    const m = min % 60;
+    return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-tall">${h}t ${m}min</span>`;
+  }
+  return `${pinSVG} <span class="nd-label">starter om</span> <span class="nd-tall">${dager}d ${timer % 24}t</span>`;
+}
+
+function setDay(dag) {
+  aktivDag = dag;
+  document.querySelectorAll('.dbtn').forEach((b, i) => {
+    b.classList.toggle('active', ['alle','lørdag','søndag'][i] === dag);
+  });
+  render();
+}
+
+function setLag(lag) {
+  aktivLag = lag;
+  const btns = document.querySelectorAll('.lbtn');
+  btns.forEach(b => b.className = 'lbtn');
+  if (lag === 'alle') btns[0].classList.add('active-alle');
+  else btns[lag].classList.add('active-' + lag);
+  render();
+}
+
+function render() {
+  synlige = kamper
+    .map((k, i) => ({ ...k, _i: i }))
+    .filter(k =>
+      (aktivLag === 'alle' || k.lag === aktivLag) &&
+      (aktivDag === 'alle' || k.dag === aktivDag)
+    );
+
+  document.getElementById('count').textContent = synlige.length + ' kamper';
+
+  const el = document.getElementById('liste');
+  if (!synlige.length) {
+    el.innerHTML = '<div class="empty">Ingen kamper funnet</div>';
+    return;
+  }
+
+  el.innerHTML = synlige.map((k, i) => {
+    const dagLabel = k.dag === 'lørdag' ? 'Lør 30. mai' : 'Søn 31. mai';
+    return `<div class="kamp">
+      <div class="kamp-top">
+        <span class="lag-badge ${badges[k.lag]}">Oppsal ${k.lag}</span>
+        <div class="kamp-tidblokk">
+          <div class="kamp-tid">${k.tid}</div>
+          <div class="kamp-dag">${dagLabel}</div>
+        </div>
+      </div>
+      <div class="kamp-teams">${k.hjem} – ${k.borte}</div>
+      <div class="kamp-arena">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        ${k.arena}
+      </div>
+      <div class="nedtelling" id="nd-${i}">${nedtellingHTML(k)}</div>
+    </div>`;
+  }).join('');
+}
+
+function tick() {
+  synlige.forEach((k, i) => {
+    const el = document.getElementById('nd-' + i);
+    if (el) el.innerHTML = nedtellingHTML(k);
+  });
+}
+
+render();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
