@@ -70,7 +70,63 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 5px;
+    margin-bottom: 8px;
   }
+
+  .spiller-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .spiller-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 99px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #1a1a1a;
+    outline: none;
+    transition: border-color .15s;
+    background: #fff;
+  }
+
+  .spiller-input:focus {
+    border-color: #aaa;
+  }
+
+  .spiller-input::placeholder {
+    color: #bbb;
+  }
+
+  .spiller-clear {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #aaa;
+    padding: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .spiller-clear.vis { display: flex; align-items: center; }
+
+  .spiller-tag {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #555;
+    padding: 3px 10px 3px 12px;
+    background: #f0f0ec;
+    border-radius: 99px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .spiller-tag.vis { display: inline-flex; }
 
   .lbtn {
     padding: 8px 4px;
@@ -251,6 +307,15 @@
     <button class="lbtn" onclick="setLag(4)">Oppsal 4</button>
     <button class="lbtn" onclick="setLag(5)">Oppsal 5</button>
   </div>
+
+  <div class="spiller-row">
+    <input id="spiller-input" class="spiller-input" type="text" placeholder="Finn spiller – initialer, f.eks FRV"
+      oninput="onSpillerInput(this.value)" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <button class="spiller-clear" id="spiller-clear" onclick="clearSpiller()" title="Fjern filter">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="spiller-tag" id="spiller-tag"></span>
+  </div>
 </header>
 
 <main>
@@ -307,7 +372,21 @@ const kamper = [
 const dagDato = { lørdag: '2026-05-30', søndag: '2026-05-31' };
 const badges  = { 1:'b1', 2:'b2', 3:'b3', 4:'b4', 5:'b5' };
 
-let aktivLag = 'alle', aktivDag = 'alle';
+const spillerLag = {};
+[
+  [1, ['AWK','STS','IB','CCG','AA','AN','IUTO']],
+  [2, ['AAA','HMH','MA','KR','SM','ES','CLK']],
+  [3, ['ALBB','ES','YFW','ADN','AHR','VA','MZ']],
+  [4, ['LBM','EC','JWN','AA','AG','VN']],
+  [5, ['OSM','IBT','FRV','IST','ORC','EH','SNK']],
+].forEach(([lag, initialer]) => {
+  initialer.forEach(i => {
+    if (!spillerLag[i]) spillerLag[i] = [];
+    spillerLag[i].push(lag);
+  });
+});
+
+let aktivLag = 'alle', aktivDag = 'alle', aktivSpiller = null;
 let synlige = [];
 
 function kampStart(k) {
@@ -366,6 +445,10 @@ function setDay(dag) {
 
 function setLag(lag) {
   aktivLag = lag;
+  aktivSpiller = null;
+  document.getElementById('spiller-input').value = '';
+  document.getElementById('spiller-clear').classList.remove('vis');
+  document.getElementById('spiller-tag').classList.remove('vis');
   const btns = document.querySelectorAll('.lbtn');
   btns.forEach(b => b.className = 'lbtn');
   if (lag === 'alle') btns[0].classList.add('active-alle');
@@ -373,13 +456,62 @@ function setLag(lag) {
   render();
 }
 
+function onSpillerInput(val) {
+  const key = val.trim().toUpperCase();
+  const clearBtn = document.getElementById('spiller-clear');
+  const tag = document.getElementById('spiller-tag');
+  clearBtn.classList.toggle('vis', val.length > 0);
+
+  if (!key) {
+    aktivSpiller = null;
+    tag.classList.remove('vis');
+    resetLagBtns();
+    render();
+    return;
+  }
+
+  const lag = spillerLag[key] || null;
+  aktivSpiller = lag;
+
+  if (lag) {
+    tag.textContent = lag.length > 1
+      ? `Lag ${lag.join(' & ')}`
+      : `Oppsal ${lag[0]}`;
+    tag.classList.add('vis');
+    resetLagBtns();
+  } else {
+    tag.textContent = 'Ikke funnet';
+    tag.classList.add('vis');
+    resetLagBtns();
+  }
+  render();
+}
+
+function clearSpiller() {
+  aktivSpiller = null;
+  document.getElementById('spiller-input').value = '';
+  document.getElementById('spiller-clear').classList.remove('vis');
+  document.getElementById('spiller-tag').classList.remove('vis');
+  resetLagBtns();
+  render();
+}
+
+function resetLagBtns() {
+  const btns = document.querySelectorAll('.lbtn');
+  btns.forEach(b => b.className = 'lbtn');
+  if (aktivLag === 'alle') btns[0].classList.add('active-alle');
+  else btns[aktivLag].classList.add('active-' + aktivLag);
+}
+
 function render() {
   synlige = kamper
     .map((k, i) => ({ ...k, _i: i }))
-    .filter(k =>
-      (aktivLag === 'alle' || k.lag === aktivLag) &&
-      (aktivDag === 'alle' || k.dag === aktivDag)
-    );
+    .filter(k => {
+      const lagOK = aktivSpiller
+        ? (aktivSpiller.includes(k.lag))
+        : (aktivLag === 'alle' || k.lag === aktivLag);
+      return lagOK && (aktivDag === 'alle' || k.dag === aktivDag);
+    });
 
   document.getElementById('count').textContent = synlige.length + ' kamper';
 
