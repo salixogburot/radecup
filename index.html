@@ -128,6 +128,59 @@
 
   .spiller-tag.vis { display: inline-flex; }
 
+  .spiller-wrap {
+    position: relative;
+    flex: 1;
+  }
+
+  .spiller-suggestions {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #e0e0dc;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    overflow: hidden;
+    z-index: 20;
+  }
+
+  .spiller-suggestions.vis { display: block; }
+
+  .sug-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .sug-item:not(:last-child) { border-bottom: 1px solid #f4f4f2; }
+
+  .sug-item:hover, .sug-item.focused { background: #f4f4f2; }
+
+  .sug-initial {
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: 0.5px;
+  }
+
+  .sug-match {
+    color: #1a56a0;
+  }
+
+  .sug-lag {
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 99px;
+    padding: 2px 9px;
+    flex-shrink: 0;
+  }
+
   .lbtn {
     padding: 8px 4px;
     border: 1px solid #ddd;
@@ -309,8 +362,12 @@
   </div>
 
   <div class="spiller-row">
-    <input id="spiller-input" class="spiller-input" type="text" placeholder="Finn spiller – initialer, f.eks FRV"
-      oninput="onSpillerInput(this.value)" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <div class="spiller-wrap">
+      <input id="spiller-input" class="spiller-input" type="text" placeholder="Finn spiller – initialer, f.eks FRV"
+        oninput="onSpillerInput(this.value)" onkeydown="onSpillerKey(event)"
+        autocomplete="off" autocorrect="off" spellcheck="false" />
+      <div class="spiller-suggestions" id="spiller-suggestions"></div>
+    </div>
     <button class="spiller-clear" id="spiller-clear" onclick="clearSpiller()" title="Fjern filter">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
@@ -456,35 +513,97 @@ function setLag(lag) {
   render();
 }
 
+const lagColors = { 1:'b1', 2:'b2', 3:'b3', 4:'b4', 5:'b5' };
+const lagNames  = { 1:'Oppsal 1', 2:'Oppsal 2', 3:'Oppsal 3', 4:'Oppsal 4', 5:'Oppsal 5' };
+let sugFocusIdx = -1;
+
+function getSuggestions(key) {
+  if (!key) return [];
+  return Object.keys(spillerLag)
+    .filter(i => i.startsWith(key))
+    .sort()
+    .slice(0, 6);
+}
+
+function renderSuggestions(key) {
+  const box = document.getElementById('spiller-suggestions');
+  const matches = getSuggestions(key);
+  sugFocusIdx = -1;
+  if (!key || matches.length === 0) { box.classList.remove('vis'); return; }
+
+  box.innerHTML = matches.map((init, idx) => {
+    const lag = spillerLag[init];
+    const lagLabel = lag.map(l => lagNames[l]).join(' & ');
+    const highlighted = `<span class="sug-match">${init.slice(0, key.length)}</span>${init.slice(key.length)}`;
+    const pills = lag.map(l =>
+      `<span class="sug-lag ${lagColors[l]}">${lagNames[l]}</span>`
+    ).join(' ');
+    return `<div class="sug-item" data-init="${init}" onmousedown="selectSuggestion('${init}')">${
+      '<span class="sug-initial">' + highlighted + '</span>'
+    }${pills}</div>`;
+  }).join('');
+  box.classList.add('vis');
+}
+
+function selectSuggestion(init) {
+  document.getElementById('spiller-input').value = init;
+  document.getElementById('spiller-suggestions').classList.remove('vis');
+  applySpiller(init);
+}
+
 function onSpillerInput(val) {
   const key = val.trim().toUpperCase();
-  const clearBtn = document.getElementById('spiller-clear');
-  const tag = document.getElementById('spiller-tag');
-  clearBtn.classList.toggle('vis', val.length > 0);
+  document.getElementById('spiller-clear').classList.toggle('vis', val.length > 0);
+  renderSuggestions(key);
 
   if (!key) {
     aktivSpiller = null;
-    tag.classList.remove('vis');
+    document.getElementById('spiller-tag').classList.remove('vis');
     resetLagBtns();
     render();
     return;
   }
 
+  applySpiller(key);
+}
+
+function applySpiller(key) {
+  const tag = document.getElementById('spiller-tag');
   const lag = spillerLag[key] || null;
   aktivSpiller = lag;
 
   if (lag) {
-    tag.textContent = lag.length > 1
-      ? `Lag ${lag.join(' & ')}`
-      : `Oppsal ${lag[0]}`;
+    tag.textContent = lag.length > 1 ? `Lag ${lag.join(' & ')}` : lagNames[lag[0]];
     tag.classList.add('vis');
-    resetLagBtns();
   } else {
     tag.textContent = 'Ikke funnet';
     tag.classList.add('vis');
-    resetLagBtns();
   }
+  resetLagBtns();
   render();
+}
+
+function onSpillerKey(e) {
+  const box = document.getElementById('spiller-suggestions');
+  const items = box.querySelectorAll('.sug-item');
+  if (!box.classList.contains('vis') || items.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    sugFocusIdx = Math.min(sugFocusIdx + 1, items.length - 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    sugFocusIdx = Math.max(sugFocusIdx - 1, 0);
+  } else if (e.key === 'Enter' && sugFocusIdx >= 0) {
+    e.preventDefault();
+    selectSuggestion(items[sugFocusIdx].dataset.init);
+    return;
+  } else if (e.key === 'Escape') {
+    box.classList.remove('vis');
+    return;
+  } else { return; }
+
+  items.forEach((el, i) => el.classList.toggle('focused', i === sugFocusIdx));
 }
 
 function clearSpiller() {
@@ -492,6 +611,7 @@ function clearSpiller() {
   document.getElementById('spiller-input').value = '';
   document.getElementById('spiller-clear').classList.remove('vis');
   document.getElementById('spiller-tag').classList.remove('vis');
+  document.getElementById('spiller-suggestions').classList.remove('vis');
   resetLagBtns();
   render();
 }
@@ -550,6 +670,12 @@ function tick() {
 
 render();
 setInterval(tick, 1000);
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.spiller-wrap')) {
+    document.getElementById('spiller-suggestions').classList.remove('vis');
+  }
+});
 </script>
 </body>
 </html>
